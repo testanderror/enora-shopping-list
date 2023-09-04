@@ -1,48 +1,52 @@
-// First thing bring over the form itself, the input box and the items list
-// The purpose is to create items list from the input text that we type in the box
-// The form allows us to access tu submission
-
-const itemForm = document.getElementById('item-form');
 const itemInput = document.getElementById('item-input');
+const itemForm = document.getElementById('item-form');
 const itemList = document.getElementById('item-list');
 const clearBtn = document.getElementById('clear');
-const filter = document.getElementById('filter');
+const itemFilter = document.getElementById('filter');
 
-// Creation of a LI element off the text input in the box
-// Appending whatever we submit into the dom. We start off by appending the input text into a LI we just create
-// That LI though has also a button and an icon we must append programatically
+function displayItems(){
+  const itemsFromStorage = getItemsFromStorage();
+  itemsFromStorage.forEach((item) => addItemToDOM(item));
+  checkUI();
+}
 
-function addItem(e) {
+function addItemSubmit(e) {
   e.preventDefault();
-  //Validate input
   const newItem = itemInput.value;
 
   if (newItem === '') {
     alert('Please add an item');
     return;
-  } 
-  
-  const li = document.createElement('li');
-  li.appendChild(document.createTextNode(newItem));
+  }
 
-  const button = createButton('remove-item btn-link text-red');
-  li.appendChild(button);
-  
+  addItemToDOM(newItem); 
+  addItemToStorage(newItem);
 
-  itemList.appendChild(li);
-
+  console.log(getItemsFromStorage());
   checkUI();
 
   itemInput.value = '';
+  
+}
+
+function addItemToDOM(item) {
+  const li = document.createElement('li');
+  li.appendChild(document.createTextNode(item));
+  
+  const button = createButton('remove-item btn-link text-red');
+  li.appendChild(button);
+
+  itemList.appendChild(li);
+
 }
 
 function createButton(classes) {
   const button = document.createElement('button');
   button.className = classes;
+  
   const icon = createIcon('fa-solid fa-xmark');
   button.appendChild(icon);
   return button;
-  
 }
 
 function createIcon(classes) {
@@ -51,81 +55,101 @@ function createIcon(classes) {
   return icon;
 }
 
-function removeItem(e) {
+function addItemToStorage(item) {
+  const itemsFromStorage = getItemsFromStorage();
+  // Add new item to the Array
+  itemsFromStorage.push(item);
+
+  //Convert to JSON string and set to local storage
+
+  localStorage.setItem('items', JSON.stringify(itemsFromStorage));
+}
+
+function getItemsFromStorage() {
+  let itemsFromStorage;
+  if(localStorage.getItem('items') === null){
+    itemsFromStorage = [];
+  } else {
+    itemsFromStorage = JSON.parse(localStorage.getItem('items'));
+  }
+  return itemsFromStorage;
+}
+
+function onClickItem(e) {
   if(e.target.parentElement.classList.contains('remove-item')){
-    e.target.parentElement.parentElement.remove();
-    console.log('Removed');
-  } 
-  checkUI();
+    removeItem(e.target.parentElement.parentElement);
+  }
+}
+
+function removeItem(item) {
+    // Remove item from DOM
+    item.remove();
+    // Remove item from Storage
+    removeItemFromStorage(item.textContent);
+    checkUI();
+  
+}
+
+function removeItemFromStorage(item) {
+  let itemsFromStorage = getItemsFromStorage();
+
+  // Filter Out item to be removed
+
+  itemsFromStorage = itemsFromStorage.filter((i) => i !== item);
+  // Re-set to Local Storage
+
+  localStorage.setItem('items', JSON.stringify(itemsFromStorage));
+  console.log(itemsFromStorage)
 }
 
 function clearAll() {
-  confirm('Are you sure?');
-  while (itemList.firstChild) {
-    itemList.removeChild(itemList.firstChild)
+  confirm('Are u sure?')
+  while (itemList.firstChild){
+    itemList.removeChild(itemList.firstChild);
   }
+
+  localStorage.removeItem('items');
   checkUI();
 }
 
-function filterItems(e) {
+function filterItems(e){
   const text = e.target.value.toLowerCase();
-  const items = document.querySelectorAll('li');
+  const items = itemList.querySelectorAll('li');
 
-  items.forEach((item) => {
+  items.forEach((item) => { 
     const itemName = item.firstChild.textContent.toLowerCase();
-    
-    if (itemName.indexOf(text) != -1) {
-      item.style.display = 'flex'
+
+    if (itemName.indexOf(text) != -1){
+      item.style.display = 'flex';
     } else {
-      item.style.display = 'none'
+      item.style.display = 'none';
     }
-  }
-  )
+  })
 }
 
-function checkUI() {
-  const items = document.querySelectorAll('li');
 
-  if(items.length === 0) {
+function checkUI(){
+  const items = itemList.querySelectorAll('li');
+
+  if (items.length === 0){
     clearBtn.style.display = 'none';
-    filter.style.display = 'none';
+    itemFilter.style.display = 'none';
   } else {
     clearBtn.style.display = 'block';
-    filter.style.display = 'block';
+    itemFilter.style.display = 'block';
   }
 }
 
-itemList.addEventListener('click', removeItem);
-itemForm.addEventListener('submit', addItem);
+// Initialize App
+
+function init() {
+
+itemForm.addEventListener('submit', addItemSubmit);
+itemList.addEventListener('click', onClickItem);
 clearBtn.addEventListener('click', clearAll);
-filter.addEventListener('input', filterItems);
-
+itemFilter.addEventListener('input', filterItems);
+document.addEventListener('DOMContentLoaded', displayItems);
 checkUI();
+}
 
-
-// function addItem creates our LI element with the text or value from the input of the box
-
-
-// Now we create another function to develop the button that will be appended within the LI 
-// Such function will have one parameter that will collect the classes and assign them to the new element BUTTON
-
-
-
-// As we console log the button we noticed it's been succesfully created but still has no icon within
-// So intuitively now we create an icon to furtherly append it to our button
-
-
-
-//Once created we head back to the button function and call out the icon function with the icon parameters.
-// This will create an icon within the button function
-// Once it's created we append it to the button and finally we return the button
-
-// With the button completely integrated with the Icon element appended we head back to our addItem function and 
-// append what's left. The button into the li item.
-// So now the LI item is complete: it has the text node, the button element and the icon element
-// It's ready to be appended into the list
-
-//We add our itemList and append the LI element we just created with all the elements integrated
-// And we finish off with the itemInput.value setting it up to '' so we make sure the input box clears up 
-// after we add an item
-
+init();
